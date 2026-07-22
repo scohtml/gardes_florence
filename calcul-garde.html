@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcul garde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    min-height: 100%;
+    background: #E9EDED;
+    display: flex;
+    justify-content: center;
+    padding: 24px 14px 48px;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    color: #17252A;
+    -webkit-font-smoothing: antialiased;
+  }
+  .cg-card { width: 100%; max-width: 430px; }
+
+  .cg-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .cg-title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .cg-formula { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #5C6B70; }
+
+  .cg-panel {
+    background: #FFFFFF;
+    border: 1px solid #DDE3E3;
+    border-radius: 14px;
+    padding: 22px 20px 24px;
+    box-shadow: 0 1px 2px rgba(23, 37, 42, 0.04);
+  }
+
+  .cg-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5C6B70;
+    margin-bottom: 8px;
+  }
+
+  /* X stepper */
+  .cg-xrow { display: flex; align-items: stretch; gap: 8px; margin-bottom: 20px; }
+  .cg-step {
+    width: 46px;
+    border: 1px solid #D3DADA;
+    background: #F3F6F6;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: #17252A;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+    user-select: none;
+  }
+  .cg-step:hover { background: #E9EEEE; }
+  .cg-step:active { background: #DDE4E4; }
+  .cg-xfield { flex: 1; position: relative; }
+  .cg-xinput {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #D3DADA;
+    border-radius: 10px;
+    background: #FFFFFF;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: #17252A;
+    padding: 10px 0;
+    outline: none;
+    transition: border-color .12s;
+  }
+  .cg-xinput:focus { border-color: var(--accent, #0E6E6E); }
+  .cg-xunit {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #97A3A3;
+    pointer-events: none;
+  }
+
+  /* Segmented control — heures */
+  .cg-seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #F3F6F6;
+    border: 1px solid #E1E7E7;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .cg-seg button {
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    padding: 9px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #5C6B70;
+    cursor: pointer;
+    transition: background .12s, color .12s, box-shadow .12s;
+  }
+  .cg-seg button.active {
+    background: #FFFFFF;
+    color: #17252A;
+    box-shadow: 0 1px 2px rgba(23,37,42,0.08);
+  }
+
+  /* AW toggle */
+  .cg-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border: 1px solid #E1E7E7;
+    border-radius: 10px;
+    margin-bottom: 22px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cg-toggle-txt { font-size: 13px; font-weight: 500; }
+  .cg-toggle-sub { font-size: 11px; color: #97A3A3; font-family: 'IBM Plex Mono', monospace; }
+  .cg-switch {
+    width: 42px; height: 24px; border-radius: 999px;
+    background: #CFD6D6; position: relative; flex-shrink: 0;
+    transition: background .16s;
+  }
+  .cg-switch::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    transition: transform .16s;
+  }
+  .cg-switch.on { background: var(--accent, #0E6E6E); }
+  .cg-switch.on::after { transform: translateX(18px); }
+
+  /* Result */
+  .cg-result {
+    border-radius: 12px;
+    padding: 18px 18px 20px;
+    background: var(--accent-soft, #E1EFEE);
+    border: 1px solid color-mix(in srgb, var(--accent, #0E6E6E) 22%, #FFFFFF);
+  }
+  .cg-result-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent, #0E6E6E);
+    margin-bottom: 4px;
+  }
+  .cg-result-main {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 40px; font-weight: 600; line-height: 1.05;
+    color: #17252A; letter-spacing: -0.01em;
+  }
+  .cg-result-main .u { font-size: 18px; color: #5C6B70; margin-left: 4px; }
+
+  .cg-breakdown {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px dashed color-mix(in srgb, var(--accent, #0E6E6E) 30%, #FFFFFF);
+    display: grid; gap: 7px;
+  }
+  .cg-line { display: flex; justify-content: space-between; align-items: baseline; }
+  .cg-line span:first-child { font-size: 12px; color: #5C6B70; }
+  .cg-line span:last-child {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    font-weight: 500; color: #17252A;
+  }
+
+  .cg-foot {
+    margin-top: 16px; font-size: 11px; line-height: 1.5;
+    color: #8A9595; font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+  <div class="cg-card">
+    <div class="cg-head">
+      <div class="cg-title">Calcul garde</div>
+      <div class="cg-formula">Sh = X × 0,97</div>
+    </div>
+
+    <div class="cg-panel" id="panel">
+      <div class="cg-label">Taux X (brut horaire)</div>
+      <div class="cg-xrow">
+        <button class="cg-step" data-step="-0.5" aria-label="Diminuer">−</button>
+        <div class="cg-xfield">
+          <input class="cg-xinput" id="x" type="text" inputmode="decimal" value="20,5" aria-label="Taux X">
+          <span class="cg-xunit">€/h</span>
+        </div>
+        <button class="cg-step" data-step="0.5" aria-label="Augmenter">+</button>
+      </div>
+
+      <div class="cg-label">Durée de la garde</div>
+      <div class="cg-seg" id="seg">
+        <button data-h="7">7 h</button>
+        <button data-h="10" class="active">10 h</button>
+        <button data-h="11">11 h</button>
+      </div>
+
+      <div class="cg-toggle" id="awToggle">
+        <div>
+          <div class="cg-toggle-txt">Ancienneté AW</div>
+          <div class="cg-toggle-sub">× 1,09</div>
+        </div>
+        <div class="cg-switch" id="awSwitch"></div>
+      </div>
+
+      <div class="cg-result" id="result">
+        <div class="cg-result-label" id="resLabel">J10h</div>
+        <div class="cg-result-main"><span id="total">—</span><span class="u">€ net</span></div>
+
+        <div class="cg-breakdown">
+          <div class="cg-line"><span>Taux Sh (horaire net)</span><span id="sh">—</span></div>
+          <div class="cg-line"><span>Taux affiché (X + 0,2·X)</span><span id="affich">—</span></div>
+          <div class="cg-line"><span>Base effective</span><span id="xeff">—</span></div>
+        </div>
+      </div>
+
+      <div class="cg-foot">
+        Sh = X × 0,97 · Total = Sh × heures · AW applique +9 % avant Sh.
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var state = { x: "20,5", hours: 10, aw: false };
+
+  var xInput   = document.getElementById("x");
+  var seg      = document.getElementById("seg");
+  var awToggle = document.getElementById("awToggle");
+  var awSwitch = document.getElementById("awSwitch");
+  var panel    = document.getElementById("panel");
+
+  var elTotal  = document.getElementById("total");
+  var elSh     = document.getElementById("sh");
+  var elAffich = document.getElementById("affich");
+  var elXeff   = document.getElementById("xeff");
+  var elLabel  = document.getElementById("resLabel");
+
+  function fmt(n) {
+    if (isNaN(n)) return "—";
+    return n.toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function render() {
+    var accent     = state.aw ? "#B4741A" : "#0E6E6E";
+    var accentSoft = state.aw ? "#F6ECD9" : "#E1EFEE";
+    panel.style.setProperty("--accent", accent);
+    panel.style.setProperty("--accent-soft", accentSoft);
+
+    var xNum   = parseFloat(String(state.x).replace(",", "."));
+    var valid  = !isNaN(xNum);
+    var factor = state.aw ? 1.09 : 1;
+    var xEff   = xNum * factor;
+    var sh     = xEff * 0.97;
+    var j      = sh * state.hours;
+    var xprim  = xNum * 0.2;
+    var affich = xNum + xprim;
+
+    elLabel.textContent = "J" + state.hours + "h" + (state.aw ? "AW" : "");
+    elTotal.textContent  = valid ? fmt(j)      : "—";
+    elSh.textContent     = valid ? fmt(sh)     : "—";
+    elAffich.textContent = valid ? fmt(affich) : "—";
+    elXeff.textContent   = valid ? fmt(xEff)   : "—";
+  }
+
+  xInput.addEventListener("input", function () {
+    state.x = xInput.value;
+    render();
+  });
+
+  document.querySelectorAll(".cg-step").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var d = parseFloat(btn.getAttribute("data-step"));
+      var base = parseFloat(String(state.x).replace(",", "."));
+      if (isNaN(base)) base = 0;
+      var next = Math.round((base + d) * 100) / 100;
+      state.x = String(next).replace(".", ",");
+      xInput.value = state.x;
+      render();
+    });
+  });
+
+  seg.addEventListener("click", function (e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    state.hours = parseInt(btn.getAttribute("data-h"), 10);
+    seg.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    render();
+  });
+
+  awToggle.addEventListener("click", function () {
+    state.aw = !state.aw;
+    awSwitch.classList.toggle("on", state.aw);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
