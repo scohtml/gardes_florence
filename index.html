@@ -30,7 +30,6 @@
   .sv-flabel { font-size: 11px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.09em; color: #6A7A7E; margin-bottom: 10px; }
   .sv-flabel .unit { text-transform: none; letter-spacing: 0; color: #9AA7AB; }
-  .sv-mini-lab { font-family: var(--mono); font-size: 12px; color: #6A7A7E; margin: 0 0 6px 2px; }
   .sv-row { display: flex; align-items: stretch; gap: 8px; }
   .sv-step { width: 46px; border: 1px solid #D6DEDE; background: #F4F7F7; border-radius: 10px;
     font-size: 22px; font-weight: 500; color: #37474C; cursor: pointer; transition: background .12s; font-family: var(--sans); }
@@ -46,13 +45,6 @@
   .sv-result .rval { font-family: var(--mono); font-size: 44px; font-weight: 600;
     line-height: 1.05; color: #17252A; letter-spacing: -0.01em; }
   .sv-result .rval .eur { font-size: 23px; color: #55666B; margin-left: 4px; }
-  .sv-real { background: #FBEDF1; border: 1px solid #D98BA6; border-radius: 14px;
-    padding: 16px 18px 14px; margin-bottom: 12px; text-align: center; }
-  .sv-real .rlabel2 { font-family: var(--mono); font-size: 12px; font-weight: 600;
-    letter-spacing: 0.06em; color: #B4456A; margin-bottom: 3px; }
-  .sv-real .rval2 { font-family: var(--mono); font-size: 32px; font-weight: 600; color: #17252A; }
-  .sv-real .rval2 .u { font-size: 17px; color: #8A5566; margin-left: 3px; }
-  .sv-real .sub2 { font-family: var(--mono); font-size: 11px; color: #A06A7C; margin-top: 7px; }
   .sv-detail { padding: 4px 2px 0; }
   .sv-drow { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0;
     border-bottom: 1px solid #E4EAEA; }
@@ -116,18 +108,11 @@
     </div>
 
     <div class="sv-panel">
-      <div class="sv-flabel">Pause &amp; trajet <span class="unit">&middot; minutes (non payées)</span></div>
-      <div class="sv-mini-lab">Pause</div>
+      <div class="sv-flabel">Prélèvement à la source <span class="unit">&middot; % (taux individuel)</span></div>
       <div class="sv-row">
-        <button class="sv-step" onclick="step('pause',-5)">&minus;</button>
-        <input class="sv-input" id="pause" inputmode="decimal" value="0" placeholder="0">
-        <button class="sv-step" onclick="step('pause',5)">+</button>
-      </div>
-      <div class="sv-mini-lab" style="margin-top:10px">Trajet</div>
-      <div class="sv-row">
-        <button class="sv-step" onclick="step('trajet',-5)">&minus;</button>
-        <input class="sv-input" id="trajet" inputmode="decimal" value="0" placeholder="0">
-        <button class="sv-step" onclick="step('trajet',5)">+</button>
+        <button class="sv-step" onclick="step('taux',-0.5)">&minus;</button>
+        <input class="sv-input" id="taux" inputmode="decimal" value="0" placeholder="0">
+        <button class="sv-step" onclick="step('taux',0.5)">+</button>
       </div>
     </div>
 
@@ -136,17 +121,13 @@
       <div class="rval" id="rval">—</div>
     </div>
 
-    <div class="sv-real">
-      <div class="rlabel2">Net /h réel</div>
-      <div class="rval2" id="rval2">—</div>
-      <div class="sub2" id="sub2">—</div>
-    </div>
-
     <div class="sv-panel">
       <div class="sv-detail">
         <div class="sv-drow"><span class="k">Ancienneté</span><span class="v" id="dSen">—</span></div>
         <div class="sv-drow"><span class="k">Brut total utilisé</span><span class="v" id="dBrut">—</span></div>
         <div class="sv-drow"><span class="k">Sh (taux horaire)</span><span class="v" id="dSh">—</span></div>
+        <div class="sv-drow"><span class="k">Net avant impôt</span><span class="v" id="dAvant">—</span></div>
+        <div class="sv-drow"><span class="k">Prélèvement à la source</span><span class="v" id="dPas">—</span></div>
       </div>
     </div>
 
@@ -169,16 +150,13 @@
   function toStr(n){ return isNaN(n) ? '' : String(r2(n)).replace('.', ','); }
   function fmt(n){ return isNaN(n) ? '—' : n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
   function fmtH(n){ return isNaN(n) ? '—' : (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')); }
-  function fmtDur(h){ if(isNaN(h)) return '—'; var t=Math.round(h*60); var hh=Math.floor(t/60), mm=t%60;
-    return mm===0 ? (hh+' h') : (hh+' h '+String(mm).padStart(2,'0')); }
   function clean(v){ return v.replace(/[^0-9.,]/g, ''); }
 
   function render(){
     var brutPNum = num($('brutP').value);
     var hoursNum = num($('hours').value);
     var yv = num($('years').value); var yearsNum = isNaN(yv) ? 0 : yv;
-    var pauseNum = isNaN(num($('pause').value)) ? 0 : num($('pause').value);
-    var trajetNum = isNaN(num($('trajet').value)) ? 0 : num($('trajet').value);
+    var tv = num($('taux').value); var tauxNum = isNaN(tv) ? 0 : tv;
 
     var active = yearsNum > 0;
     var accent = active ? '#1E8E6B' : '#0E6E6E';
@@ -191,24 +169,23 @@
     var senFactor = 1 + yearsNum * 0.01;
     var brutEff = brutPNum * senFactor;
     var sh = brutEff * 0.77;
-    var j = sh * hoursNum;
+    var jAvant = sh * hoursNum;
+    var pasFactor = 1 - tauxNum / 100;
+    var pasMontant = jAvant * tauxNum / 100;
+    var j = jAvant * pasFactor;
     var suffix = active ? 'AW' : '';
-
-    var extraH = (pauseNum + trajetNum) / 60;
-    var amplitude = hoursNum + extraH;
-    var netReal = amplitude > 0 ? j / amplitude : NaN;
 
     $('rlabel').textContent = 'J' + fmtH(hoursNum) + 'h' + suffix + ' · net du jour';
     $('rval').innerHTML = fmt(j) + '<span class="eur"> €</span>';
-    $('rval2').innerHTML = fmt(netReal) + '<span class="u"> €/h</span>';
-    $('sub2').textContent = 'Amplitude ' + fmtDur(amplitude) + ' · garde ' + fmtH(hoursNum) + ' h + ' + fmtH(pauseNum + trajetNum) + ' min';
     $('dSen').textContent = active ? '+' + fmtH(yearsNum) + ' % (×' + fmt(senFactor) + ')' : '—';
     $('dBrut').textContent = fmt(brutEff);
     $('dSh').textContent = fmt(sh) + ' €';
+    $('dAvant').textContent = fmt(jAvant) + ' €';
+    $('dPas').textContent = tauxNum > 0 ? '−' + fmtH(tauxNum) + ' % (−' + fmt(pasMontant) + ' €)' : '—';
     $('refTitle').textContent = 'Repères ' + (active ? '(avec ancienneté)' : '(sans ancienneté)');
     [7,10,11].forEach(function(h){
       $('ref'+h+'h').textContent = 'J' + h + 'h' + suffix;
-      $('ref'+h+'m').textContent = fmt(sh * h);
+      $('ref'+h+'m').textContent = fmt(sh * h * pasFactor);
       $('ref'+h+'cell').className = 'sv-ref-cell' + (hoursNum === h ? ' active' : '');
     });
   }
@@ -224,7 +201,7 @@
 
   $('brut').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brutP').value = isNaN(n) ? '' : toStr(n * PRIME); render(); });
   $('brutP').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brut').value = isNaN(n) ? '' : toStr(n / PRIME); render(); });
-  ['hours','years','pause','trajet'].forEach(function(id){
+  ['hours','years','taux'].forEach(function(id){
     $(id).addEventListener('input', function(e){ e.target.value = clean(e.target.value); render(); });
   });
 
