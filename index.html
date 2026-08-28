@@ -47,18 +47,11 @@
   .sv-result .rval .eur { font-size: 23px; color: #55666B; margin-left: 4px; }
   .sv-detail { padding: 4px 2px 0; }
   .sv-drow { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0;
-    border-bottom: 1px solid #E4EAEA; }
+    border-bottom: 1px solid #E4EAEA; gap: 10px; }
   .sv-drow:last-child { border-bottom: none; }
   .sv-drow .k { color: #6A7A7E; }
-  .sv-drow .v { font-family: var(--mono); font-weight: 500; }
-  .sv-ref { margin-top: 2px; }
-  .sv-ref-title { font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.09em; color: #6A7A7E; margin-bottom: 8px; }
-  .sv-ref-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-  .sv-ref-cell { border: 1px solid #E0E7E7; border-radius: 10px; padding: 10px 6px; text-align: center; }
-  .sv-ref-cell .h { font-family: var(--mono); font-size: 11px; color: #6A7A7E; }
-  .sv-ref-cell .m { font-family: var(--mono); font-size: 15px; font-weight: 600; margin-top: 3px; }
-  .sv-ref-cell.active { border-color: var(--accent); background: var(--accent-soft); }
+  .sv-drow .v { font-family: var(--mono); font-weight: 500; white-space: nowrap; }
+  .sv-drow .v.strong { font-weight: 600; color: var(--accent); }
 </style>
 </head>
 <body>
@@ -68,7 +61,7 @@
       <span class="sv-title">Salaire vacations</span>
       <span class="sv-formula">Sh = brut+primes × 0,77</span>
     </div>
-
+ 
     <div class="sv-linked">
       <div class="sv-panel">
         <div class="sv-flabel">Brut</div>
@@ -88,7 +81,7 @@
         </div>
       </div>
     </div>
-
+ 
     <div class="sv-panel">
       <div class="sv-flabel">Durée de garde <span class="unit">&middot; heures payées</span></div>
       <div class="sv-row">
@@ -97,7 +90,7 @@
         <button class="sv-step" onclick="step('hours',0.5)">+</button>
       </div>
     </div>
-
+ 
     <div class="sv-panel">
       <div class="sv-flabel">Ancienneté <span class="unit">&middot; années (+1 %/an)</span></div>
       <div class="sv-row">
@@ -106,7 +99,7 @@
         <button class="sv-step" onclick="step('years',1)">+</button>
       </div>
     </div>
-
+ 
     <div class="sv-panel">
       <div class="sv-flabel">Prélèvement à la source <span class="unit">&middot; % (taux individuel)</span></div>
       <div class="sv-row">
@@ -115,33 +108,35 @@
         <button class="sv-step" onclick="step('taux',0.5)">+</button>
       </div>
     </div>
-
+ 
     <div class="sv-result">
       <div class="rlabel" id="rlabel">J10h · net du jour</div>
       <div class="rval" id="rval">—</div>
     </div>
-
+ 
     <div class="sv-panel">
       <div class="sv-detail">
-        <div class="sv-drow"><span class="k">Ancienneté</span><span class="v" id="dSen">—</span></div>
-        <div class="sv-drow"><span class="k">Brut total utilisé</span><span class="v" id="dBrut">—</span></div>
-        <div class="sv-drow"><span class="k">Sh (taux horaire)</span><span class="v" id="dSh">—</span></div>
         <div class="sv-drow"><span class="k">Net avant impôt</span><span class="v" id="dAvant">—</span></div>
         <div class="sv-drow"><span class="k">Prélèvement à la source</span><span class="v" id="dPas">—</span></div>
       </div>
     </div>
-
-    <div class="sv-ref">
-      <div class="sv-ref-title" id="refTitle">Repères (sans ancienneté)</div>
-      <div class="sv-ref-grid">
-        <div class="sv-ref-cell" id="ref7cell"><div class="h" id="ref7h">J7h</div><div class="m" id="ref7m">—</div></div>
-        <div class="sv-ref-cell" id="ref10cell"><div class="h" id="ref10h">J10h</div><div class="m" id="ref10m">—</div></div>
-        <div class="sv-ref-cell" id="ref11cell"><div class="h" id="ref11h">J11h</div><div class="m" id="ref11m">—</div></div>
+ 
+    <div class="sv-panel">
+      <div class="sv-flabel">Projection <span class="unit">&middot; nombre de jours</span></div>
+      <div class="sv-row">
+        <button class="sv-step" onclick="step('jours',-1)">&minus;</button>
+        <input class="sv-input" id="jours" inputmode="decimal" value="15" placeholder="0">
+        <button class="sv-step" onclick="step('jours',1)">+</button>
+      </div>
+      <div class="sv-detail" style="margin-top:12px">
+        <div class="sv-drow"><span class="k">Total net après impôt</span><span class="v strong" id="pTotal">—</span></div>
+        <div class="sv-drow"><span class="k">Prélevé pour les impôts</span><span class="v" id="pImpots">—</span></div>
+        <div class="sv-drow"><span class="k">Réserve congés recommandée (10 %)</span><span class="v" id="pConges">—</span></div>
       </div>
     </div>
   </div>
 </div>
-
+ 
 <script>
   var PRIME = 1.2;
   function $(id){ return document.getElementById(id); }
@@ -151,13 +146,14 @@
   function fmt(n){ return isNaN(n) ? '—' : n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
   function fmtH(n){ return isNaN(n) ? '—' : (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')); }
   function clean(v){ return v.replace(/[^0-9.,]/g, ''); }
-
+ 
   function render(){
     var brutPNum = num($('brutP').value);
     var hoursNum = num($('hours').value);
     var yv = num($('years').value); var yearsNum = isNaN(yv) ? 0 : yv;
     var tv = num($('taux').value); var tauxNum = isNaN(tv) ? 0 : tv;
-
+    var jv = num($('jours').value); var joursNum = isNaN(jv) ? 0 : jv;
+ 
     var active = yearsNum > 0;
     var accent = active ? '#1E8E6B' : '#0E6E6E';
     var accentSoft = active ? '#DDF0E7' : '#E1EFEE';
@@ -165,47 +161,45 @@
     root.setProperty('--accent', accent);
     root.setProperty('--accent-soft', accentSoft);
     root.setProperty('--accent-border', accent + '33');
-
+ 
     var senFactor = 1 + yearsNum * 0.01;
     var brutEff = brutPNum * senFactor;
     var sh = brutEff * 0.77;
     var jAvant = sh * hoursNum;
-    var pasFactor = 1 - tauxNum / 100;
     var pasMontant = jAvant * tauxNum / 100;
-    var j = jAvant * pasFactor;
+    var j = jAvant - pasMontant;
     var suffix = active ? 'AW' : '';
-
+ 
     $('rlabel').textContent = 'J' + fmtH(hoursNum) + 'h' + suffix + ' · net du jour';
     $('rval').innerHTML = fmt(j) + '<span class="eur"> €</span>';
-    $('dSen').textContent = active ? '+' + fmtH(yearsNum) + ' % (×' + fmt(senFactor) + ')' : '—';
-    $('dBrut').textContent = fmt(brutEff);
-    $('dSh').textContent = fmt(sh) + ' €';
     $('dAvant').textContent = fmt(jAvant) + ' €';
     $('dPas').textContent = tauxNum > 0 ? '−' + fmtH(tauxNum) + ' % (−' + fmt(pasMontant) + ' €)' : '—';
-    $('refTitle').textContent = 'Repères ' + (active ? '(avec ancienneté)' : '(sans ancienneté)');
-    [7,10,11].forEach(function(h){
-      $('ref'+h+'h').textContent = 'J' + h + 'h' + suffix;
-      $('ref'+h+'m').textContent = fmt(sh * h * pasFactor);
-      $('ref'+h+'cell').className = 'sv-ref-cell' + (hoursNum === h ? ' active' : '');
-    });
+ 
+    var total = j * joursNum;
+    var impots = pasMontant * joursNum;
+    var conges = total * 0.10;
+    $('pTotal').textContent = fmt(total) + ' €';
+    $('pImpots').textContent = fmt(impots) + ' €';
+    $('pConges').textContent = fmt(conges) + ' €';
   }
-
+ 
   function setBrut(s){ $('brut').value = s; var n = num(s); $('brutP').value = isNaN(n) ? '' : toStr(n * PRIME); render(); }
   function setBrutP(s){ $('brutP').value = s; var n = num(s); $('brut').value = isNaN(n) ? '' : toStr(n / PRIME); render(); }
-
+ 
   function step(field, d){
     if (field === 'brut'){ var b = isNaN(num($('brut').value)) ? 0 : num($('brut').value); setBrut(String(Math.max(0, r2(b + d))).replace('.', ',')); }
     else if (field === 'brutP'){ var p = isNaN(num($('brutP').value)) ? 0 : num($('brutP').value); setBrutP(String(Math.max(0, r2(p + d))).replace('.', ',')); }
     else { var el = $(field); var v = isNaN(num(el.value)) ? 0 : num(el.value); el.value = String(Math.max(0, r2(v + d))).replace('.', ','); render(); }
   }
-
+ 
   $('brut').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brutP').value = isNaN(n) ? '' : toStr(n * PRIME); render(); });
   $('brutP').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brut').value = isNaN(n) ? '' : toStr(n / PRIME); render(); });
-  ['hours','years','taux'].forEach(function(id){
+  ['hours','years','taux','jours'].forEach(function(id){
     $(id).addEventListener('input', function(e){ e.target.value = clean(e.target.value); render(); });
   });
-
+ 
   render();
 </script>
 </body>
 </html>
+ 
