@@ -216,10 +216,7 @@ var ETABLISSEMENTS = [
   ["Castel Voltaire", "diplome", null],
   ["Hautefeuille", "diplome", null],
   ["Forêt de l'Hautil_Andresy", "diplome", null],
-
-  /* --- Reprise à vérifier --- */
-  ["Ehpad Saint Ouen", "inconnu", null],
-
+  
   /* --- Reprise aux années travaillées --- */
   ["Les Pensées", "annees", 10],
   ["Villa Lafitte", "annees", 10],
@@ -248,6 +245,7 @@ var ETABLISSEMENTS = [
   ["Quincy sous Senart", "annees", null],
 
   /* --- Pas de reprise d'ancienneté --- */
+  ["Ehpad Saint Ouen", "aucune", null],
   ["Magnolia", "aucune", null],
   ["Tiers Temps Suresnes", "aucune", null],
   ["EHPAD La Commanderie", "aucune", null],
@@ -273,7 +271,7 @@ var ETABLISSEMENTS = [
    Quand un établissement inconnu est saisi, un bouton pré-remplit
    un mail vers cette adresse. Mettre ici l'adresse destinataire :
    ------------------------------------------------------------------ */
-var ALERT_EMAIL = "adresse@exemple.fr";
+var ALERT_EMAIL = "sazasco@gmail.com";
 
   var PRIME = 1.2;
   var etabConfig = null; // {name, type, duree} de l'établissement choisi
@@ -290,8 +288,7 @@ var ALERT_EMAIL = "adresse@exemple.fr";
   var TYPE_TXT = {
     diplome: "reprise au diplôme",
     annees: "reprise aux années travaillées",
-    aucune: "pas de reprise d'ancienneté",
-    inconnu: "reprise à vérifier (???)"
+    aucune: "pas de reprise d'ancienneté"
   };
   var TYPE_TAG = { diplome: "diplôme", annees: "années", aucune: "sans reprise", inconnu: "???" };
 
