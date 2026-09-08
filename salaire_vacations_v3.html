@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Salaire vacations">
+<meta name="theme-color" content="#E9EDED">
+<title>Salaire vacations v3</title>
+<style>
+  :root { --accent: #0E6E6E; --accent-soft: #E1EFEE; --accent-border: #0E6E6E33;
+    --mono: ui-monospace, 'SF Mono', 'Segoe UI Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #E9EDED; }
+  .sv-root { min-height: 100vh; background: #E9EDED; display: flex; justify-content: center;
+    padding: 20px 14px 40px; font-family: var(--sans); color: #17252A; -webkit-font-smoothing: antialiased; }
+  .sv-card { width: 100%; max-width: 430px; }
+  .sv-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+  .sv-title { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; }
+  .sv-formula { font-family: var(--mono); font-size: 11px; color: #5C6B70; }
+  .sv-panel { background: #FFFFFF; border: 1px solid #D6DEDE; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .sv-linked { margin-bottom: 12px; }
+  .sv-linked .sv-panel { margin-bottom: 0; }
+  .sv-link-tie { display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 5px 0; font-family: var(--mono); font-size: 10.5px; color: #8A979B; }
+  .sv-link-tie .bar { flex: 1; height: 1px; background: #D6DEDE; max-width: 70px; }
+  .sv-flabel { font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.09em; color: #6A7A7E; margin-bottom: 10px; }
+  .sv-flabel .unit { text-transform: none; letter-spacing: 0; color: #9AA7AB; }
+  .sv-row { display: flex; align-items: stretch; gap: 8px; }
+  .sv-step { width: 46px; border: 1px solid #D6DEDE; background: #F4F7F7; border-radius: 10px;
+    font-size: 22px; font-weight: 500; color: #37474C; cursor: pointer; transition: background .12s; font-family: var(--sans); }
+  .sv-step:active { background: #E4EBEB; }
+  .sv-input { flex: 1; min-width: 0; width: 100%; text-align: center; font-family: var(--mono);
+    font-size: 28px; font-weight: 500; border: 1px solid #D6DEDE; border-radius: 10px;
+    padding: 6px 4px; color: #17252A; outline: none; transition: border-color .12s; background: #fff; }
+  .sv-input:focus { border-color: var(--accent); }
+  /* Autocomplétion établissement */
+  .sv-ac { position: relative; }
+  .sv-ac-input { width: 100%; font-family: var(--sans); font-size: 16px; font-weight: 500;
+    border: 1px solid #D6DEDE; border-radius: 10px; padding: 12px; color: #17252A;
+    outline: none; background: #fff; transition: border-color .12s; }
+  .sv-ac-input:focus { border-color: var(--accent); }
+  .sv-ac-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff;
+    border: 1px solid #D6DEDE; border-radius: 10px; margin-top: 4px; max-height: 230px;
+    overflow-y: auto; z-index: 20; box-shadow: 0 6px 18px rgba(23,37,42,.12); display: none; }
+  .sv-ac-item { padding: 11px 12px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #EFF3F3; }
+  .sv-ac-item:last-child { border-bottom: none; }
+  .sv-ac-item:hover, .sv-ac-item:active { background: var(--accent-soft); }
+  .sv-ac-tag { font-family: var(--mono); font-size: 10.5px; color: #8A979B; margin-left: 6px; }
+  .sv-etab-info { font-family: var(--mono); font-size: 11.5px; color: var(--accent); margin-top: 8px; }
+  .sv-etab-warn { display: none; margin-top: 10px; background: #FFF6E8; border: 1px solid #E8CFA3;
+    border-radius: 10px; padding: 11px 12px; font-size: 12.5px; color: #7A5A22; line-height: 1.45; }
+  .sv-etab-warn a { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 12px;
+    font-weight: 600; color: #7A5A22; text-decoration: none; border: 1px solid #D9B871;
+    border-radius: 8px; padding: 7px 10px; background: #FDEED3; }
+  .sv-noaw { font-size: 14px; font-weight: 600; color: #8A5566; background: #FBEDF1;
+    border: 1px solid #E7C3CF; border-radius: 10px; padding: 13px 12px; text-align: center; display: none; }
+  .sv-result { background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: 14px;
+    padding: 20px 18px 18px; margin-bottom: 12px; text-align: center; transition: background .15s, border-color .15s; }
+  .sv-result .rlabel { font-family: var(--mono); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.06em; color: var(--accent); margin-bottom: 4px; }
+  .sv-result .rval { font-family: var(--mono); font-size: 44px; font-weight: 600;
+    line-height: 1.05; color: #17252A; letter-spacing: -0.01em; }
+  .sv-result .rval .eur { font-size: 23px; color: #55666B; margin-left: 4px; }
+  .sv-detail { padding: 4px 2px 0; }
+  .sv-drow { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0;
+    border-bottom: 1px solid #E4EAEA; gap: 10px; }
+  .sv-drow:last-child { border-bottom: none; }
+  .sv-drow .k { color: #6A7A7E; }
+  .sv-drow .v { font-family: var(--mono); font-weight: 500; white-space: nowrap; }
+  .sv-drow .v.strong { font-weight: 600; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="sv-root">
+  <div class="sv-card">
+    <div class="sv-head">
+      <span class="sv-title">Salaire vacations</span>
+      <span class="sv-formula">Sh = brut+primes × 0,77</span>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-flabel">Établissement <span class="unit">&middot; taper pour rechercher</span></div>
+      <div class="sv-ac">
+        <input class="sv-ac-input" id="etab" type="text" placeholder="Nom de l'établissement…" autocomplete="off">
+        <div class="sv-ac-list" id="etabList"></div>
+      </div>
+      <div class="sv-etab-info" id="etabInfo"></div>
+      <div class="sv-etab-warn" id="etabWarn">
+        Établissement inconnu de la base. Renseigne-toi auprès d'eux sur la reprise d'ancienneté
+        (diplôme, années travaillées ou aucune) et saisis le nombre d'années dans la zone Ancienneté.
+        <br><a id="etabMail" href="#">Signaler par mail : nouvel établissement</a>
+      </div>
+    </div>
+
+    <div class="sv-linked">
+      <div class="sv-panel">
+        <div class="sv-flabel">Brut</div>
+        <div class="sv-row">
+          <button class="sv-step" onclick="step('brut',-0.5)">&minus;</button>
+          <input class="sv-input" id="brut" inputmode="decimal" value="20,5" placeholder="0">
+          <button class="sv-step" onclick="step('brut',0.5)">+</button>
+        </div>
+      </div>
+      <div class="sv-link-tie"><span class="bar"></span> +20 % primes CDD &middot; &times;1,2 <span class="bar"></span></div>
+      <div class="sv-panel">
+        <div class="sv-flabel">Brut + primes CDD</div>
+        <div class="sv-row">
+          <button class="sv-step" onclick="step('brutP',-0.5)">&minus;</button>
+          <input class="sv-input" id="brutP" inputmode="decimal" value="24,6" placeholder="0">
+          <button class="sv-step" onclick="step('brutP',0.5)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-flabel">Durée de garde <span class="unit">&middot; heures payées</span></div>
+      <div class="sv-row">
+        <button class="sv-step" onclick="step('hours',-0.5)">&minus;</button>
+        <input class="sv-input" id="hours" inputmode="decimal" value="10" placeholder="0">
+        <button class="sv-step" onclick="step('hours',0.5)">+</button>
+      </div>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-flabel" id="ancLabel">Ancienneté <span class="unit" id="ancUnit">&middot; années (+1 %/an)</span></div>
+      <div class="sv-row" id="ancRow">
+        <button class="sv-step" onclick="step('years',-1)">&minus;</button>
+        <input class="sv-input" id="years" inputmode="decimal" value="0" placeholder="0">
+        <button class="sv-step" onclick="step('years',1)">+</button>
+      </div>
+      <div class="sv-noaw" id="ancNone">Pas de reprise d'ancienneté</div>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-flabel">Prélèvement à la source <span class="unit">&middot; % (taux individuel)</span></div>
+      <div class="sv-row">
+        <button class="sv-step" onclick="step('taux',-0.5)">&minus;</button>
+        <input class="sv-input" id="taux" inputmode="decimal" value="0" placeholder="0">
+        <button class="sv-step" onclick="step('taux',0.5)">+</button>
+      </div>
+    </div>
+
+    <div class="sv-result">
+      <div class="rlabel" id="rlabel">J10h · net du jour</div>
+      <div class="rval" id="rval">—</div>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-detail">
+        <div class="sv-drow"><span class="k">Net avant impôt</span><span class="v" id="dAvant">—</span></div>
+        <div class="sv-drow"><span class="k">Prélèvement à la source</span><span class="v" id="dPas">—</span></div>
+      </div>
+    </div>
+
+    <div class="sv-panel">
+      <div class="sv-flabel">Projection <span class="unit">&middot; nombre de jours</span></div>
+      <div class="sv-row">
+        <button class="sv-step" onclick="step('jours',-1)">&minus;</button>
+        <input class="sv-input" id="jours" inputmode="decimal" value="15" placeholder="0">
+        <button class="sv-step" onclick="step('jours',1)">+</button>
+      </div>
+      <div class="sv-detail" style="margin-top:12px">
+        <div class="sv-drow"><span class="k">Total net après impôt</span><span class="v strong" id="pTotal">—</span></div>
+        <div class="sv-drow"><span class="k">Prélevé pour les impôts</span><span class="v" id="pImpots">—</span></div>
+        <div class="sv-drow"><span class="k">Réserve congés recommandée (10 %)</span><span class="v" id="pConges">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================================================================
+   ▼▼▼  BASE ÉTABLISSEMENTS — C'EST ICI QU'ON AJOUTE / MODIFIE  ▼▼▼
+   ------------------------------------------------------------------
+   Une ligne par établissement, format :
+     ["Nom affiché", "reprise", durée]
+
+   - "reprise" : "diplome"  -> reprise d'ancienneté au diplôme
+                 "annees"   -> reprise aux années travaillées
+                 "aucune"   -> pas de reprise (le champ ancienneté
+                               est remplacé par un message)
+                 "inconnu"  -> à vérifier (champ affiché quand même)
+   - durée     : durée de garde habituelle en heures (10, 7, …)
+                 ou null si non connue (le champ n'est pas modifié)
+
+   Pour ajouter un établissement : dupliquer une ligne, changer le
+   nom, la reprise et la durée. Rien d'autre à toucher.
+   ================================================================== */
+var ETABLISSEMENTS = [
+  /* --- Reprise au diplôme --- */
+  ["Stéphanie", "diplome", 10],
+  ["Castel", "diplome", 10],
+  ["Simone Vouet_Port Marly", "diplome", 10],
+  ["Rachel (St Leu)", "diplome", 10],
+  ["Empereur_Garches", "diplome", 10],
+  ["Offenbach_Epinay", "diplome", null],
+  ["Villa Jeanne d'Arc", "diplome", null],
+  ["Medicis Vanves", "diplome", null],
+  ["Medicis Asnières", "diplome", null],
+  ["Pavillon des Arts_St Brice", "diplome", null],
+  ["Fontaine_Asnières", "diplome", null],
+  ["Grand Clos", "diplome", null],
+  ["Ste Geneviève", "diplome", null],
+  ["SSIAD Domusvi 16e", "diplome", null],
+  ["La Roseraie_Croissy/Seine", "diplome", null],
+  ["Leopold Bellan_Romainville", "diplome", null],
+  ["Lumières Automne_St Ouen", "diplome", null],
+  ["Les Floralies Bagnolet", "diplome", null],
+  ["Villa Epidaure Celle St Cloud", "diplome", null],
+  ["Medicis Sèvres", "diplome", null],
+  ["Castel Voltaire", "diplome", null],
+  ["Hautefeuille", "diplome", null],
+  ["Forêt de l'Hautil_Andresy", "diplome", null],
+
+  /* --- Reprise à vérifier --- */
+  ["Ehpad Saint Ouen", "inconnu", null],
+
+  /* --- Reprise aux années travaillées --- */
+  ["Les Pensées", "annees", 10],
+  ["Villa Lafitte", "annees", 10],
+  ["Montjoie", "annees", 10],
+  ["Grenelle", "annees", 10],
+  ["EHPAD Enghein", "annees", 10],
+  ["Jardins de Montmartre", "annees", 10],
+  ["Azur Colombes", "annees", 7],
+  ["Laure Eteneau", "annees", null],
+  ["Cerisaie", "annees", null],
+  ["(Boisquillon)", "annees", null],
+  ["Domaine Saint Pry", "annees", null],
+  ["Villa Concorde", "annees", null],
+  ["Jardins Levallois", "annees", null],
+  ["Rés. Le Village_Taverny", "annees", null],
+  ["Jean Baptiste Carpeaux", "annees", null],
+  ["Constance Mazier", "annees", null],
+  ["Seigneurie Pantin", "annees", null],
+  ["La Source d'Auteuil (collé à Mozart)", "annees", null],
+  ["Amitié Partage", "annees", null],
+  ["SSIAD APSSAD 7e", "annees", null],
+  ["SSIAD Cœur de Ville 15e", "annees", null],
+  ["SSIAD Notre Village 15e", "annees", null],
+  ["SSIAD APSSAD 12e", "annees", null],
+  ["Maganville", "annees", null],
+  ["Quincy sous Senart", "annees", null],
+
+  /* --- Pas de reprise d'ancienneté --- */
+  ["Magnolia", "aucune", null],
+  ["Tiers Temps Suresnes", "aucune", null],
+  ["EHPAD La Commanderie", "aucune", null],
+  ["Roger Teulle", "aucune", null],
+  ["Belvédère - Les Jardins d'Iroise", "aucune", null],
+  ["Les Ardets_Clichy", "aucune", null],
+  ["EHPAD Gennevilliers", "aucune", null],
+  ["Medicis Argenteuil", "aucune", null],
+  ["Les Marines_Asnières", "aucune", null],
+  ["Rabelais - Asnières", "aucune", null],
+  ["Imperial_Colombes", "aucune", null],
+  ["Résidence Marconi", "aucune", null],
+  ["Villa Pegase", "aucune", null],
+  ["Le Tilleul - Chanteloup Les Vignes", "aucune", null],
+  ["Domusvi_Longchamp (Suresnes)", "aucune", null]
+];
+/* ==================================================================
+   ▲▲▲  FIN DE LA BASE ÉTABLISSEMENTS  ▲▲▲
+   ================================================================== */
+
+/* ------------------------------------------------------------------
+   ADRESSE D'ALERTE « NOUVEL ÉTABLISSEMENT »
+   Quand un établissement inconnu est saisi, un bouton pré-remplit
+   un mail vers cette adresse. Mettre ici l'adresse destinataire :
+   ------------------------------------------------------------------ */
+var ALERT_EMAIL = "adresse@exemple.fr";
+
+  var PRIME = 1.2;
+  var etabConfig = null; // {name, type, duree} de l'établissement choisi
+
+  function $(id){ return document.getElementById(id); }
+  function num(s){ return parseFloat(String(s).replace(',', '.')); }
+  function r2(n){ return Math.round(n*100)/100; }
+  function toStr(n){ return isNaN(n) ? '' : String(r2(n)).replace('.', ','); }
+  function fmt(n){ return isNaN(n) ? '—' : n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function fmtH(n){ return isNaN(n) ? '—' : (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')); }
+  function clean(v){ return v.replace(/[^0-9.,]/g, ''); }
+  function norm(s){ return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+  var TYPE_TXT = {
+    diplome: "reprise au diplôme",
+    annees: "reprise aux années travaillées",
+    aucune: "pas de reprise d'ancienneté",
+    inconnu: "reprise à vérifier (???)"
+  };
+  var TYPE_TAG = { diplome: "diplôme", annees: "années", aucune: "sans reprise", inconnu: "???" };
+
+  function applyEtab(entry){
+    etabConfig = entry ? { name: entry[0], type: entry[1], duree: entry[2] } : null;
+    if (entry) setWarn(null);
+    var info = $('etabInfo');
+    if (etabConfig){
+      $('etab').value = etabConfig.name;
+      var txt = TYPE_TXT[etabConfig.type] || "";
+      if (etabConfig.duree) txt += " · garde " + etabConfig.duree + " h";
+      info.textContent = txt;
+      if (etabConfig.duree) $('hours').value = String(etabConfig.duree);
+    } else {
+      info.textContent = "";
+    }
+    updateAncZone();
+    render();
+  }
+
+  function updateAncZone(){
+    var row = $('ancRow'), none = $('ancNone'), unit = $('ancUnit');
+    var type = etabConfig ? etabConfig.type : null;
+    if (type === 'aucune'){
+      row.style.display = 'none';
+      none.style.display = 'block';
+    } else {
+      row.style.display = 'flex';
+      none.style.display = 'none';
+      if (type === 'diplome') unit.innerHTML = '&middot; années depuis le diplôme (+1 %/an)';
+      else if (type === 'annees') unit.innerHTML = '&middot; années travaillées (+1 %/an)';
+      else if (type === 'inconnu') unit.innerHTML = '&middot; années (+1 %/an) — base à vérifier';
+      else unit.innerHTML = '&middot; années (+1 %/an)';
+    }
+  }
+
+  function hideList(){ $('etabList').style.display = 'none'; }
+
+  function setWarn(name){
+    var w = $('etabWarn');
+    if (!name){ w.style.display = 'none'; return; }
+    var body = 'Nom : ' + name + '\nReprise d\'ancienneté : diplôme / années travaillées / aucune ?\nDurée de garde habituelle : ?';
+    $('etabMail').href = 'mailto:' + ALERT_EMAIL + '?subject=' + encodeURIComponent('Nouvel établissement') + '&body=' + encodeURIComponent(body);
+    w.style.display = 'block';
+  }
+
+  function showSuggestions(q){
+    var list = $('etabList');
+    var nq = norm(q).trim();
+    if (!nq){ hideList(); setWarn(null); return; }
+    var matches = ETABLISSEMENTS.filter(function(e){ return norm(e[0]).indexOf(nq) !== -1; }).slice(0, 8);
+    setWarn(matches.length ? null : q.trim());
+    if (!matches.length){ hideList(); return; }
+    list.innerHTML = '';
+    matches.forEach(function(e){
+      var d = document.createElement('div');
+      d.className = 'sv-ac-item';
+      d.innerHTML = e[0] + '<span class="sv-ac-tag">' + (TYPE_TAG[e[1]] || '') + (e[2] ? ' · ' + e[2] + ' h' : '') + '</span>';
+      d.addEventListener('pointerdown', function(ev){ ev.preventDefault(); applyEtab(e); hideList(); });
+      list.appendChild(d);
+    });
+    list.style.display = 'block';
+  }
+
+  $('etab').addEventListener('input', function(e){
+    var v = e.target.value;
+    var exact = ETABLISSEMENTS.find(function(x){ return norm(x[0]) === norm(v).trim(); });
+    if (exact){ applyEtab(exact); }
+    else if (etabConfig){ etabConfig = null; $('etabInfo').textContent = ''; updateAncZone(); render(); }
+    showSuggestions(v);
+  });
+  $('etab').addEventListener('focus', function(e){ showSuggestions(e.target.value); });
+  $('etab').addEventListener('blur', function(){ setTimeout(hideList, 150); });
+
+  function render(){
+    var brutPNum = num($('brutP').value);
+    var hoursNum = num($('hours').value);
+    var noAw = etabConfig && etabConfig.type === 'aucune';
+    var yv = num($('years').value); var yearsNum = (noAw || isNaN(yv)) ? 0 : yv;
+    var tv = num($('taux').value); var tauxNum = isNaN(tv) ? 0 : tv;
+    var jv = num($('jours').value); var joursNum = isNaN(jv) ? 0 : jv;
+
+    var active = yearsNum > 0;
+    var accent = active ? '#1E8E6B' : '#0E6E6E';
+    var accentSoft = active ? '#DDF0E7' : '#E1EFEE';
+    var root = document.documentElement.style;
+    root.setProperty('--accent', accent);
+    root.setProperty('--accent-soft', accentSoft);
+    root.setProperty('--accent-border', accent + '33');
+
+    var senFactor = 1 + yearsNum * 0.01;
+    var brutEff = brutPNum * senFactor;
+    var sh = brutEff * 0.77;
+    var jAvant = sh * hoursNum;
+    var pasMontant = jAvant * tauxNum / 100;
+    var j = jAvant - pasMontant;
+    var suffix = active ? 'AW' : '';
+
+    $('rlabel').textContent = 'J' + fmtH(hoursNum) + 'h' + suffix + ' · net du jour';
+    $('rval').innerHTML = fmt(j) + '<span class="eur"> €</span>';
+    $('dAvant').textContent = fmt(jAvant) + ' €';
+    $('dPas').textContent = tauxNum > 0 ? '−' + fmtH(tauxNum) + ' % (−' + fmt(pasMontant) + ' €)' : '—';
+
+    var total = j * joursNum;
+    $('pTotal').textContent = fmt(total) + ' €';
+    $('pImpots').textContent = fmt(pasMontant * joursNum) + ' €';
+    $('pConges').textContent = fmt(total * 0.10) + ' €';
+  }
+
+  function setBrut(s){ $('brut').value = s; var n = num(s); $('brutP').value = isNaN(n) ? '' : toStr(n * PRIME); render(); }
+  function setBrutP(s){ $('brutP').value = s; var n = num(s); $('brut').value = isNaN(n) ? '' : toStr(n / PRIME); render(); }
+
+  function step(field, d){
+    if (field === 'brut'){ var b = isNaN(num($('brut').value)) ? 0 : num($('brut').value); setBrut(String(Math.max(0, r2(b + d))).replace('.', ',')); }
+    else if (field === 'brutP'){ var p = isNaN(num($('brutP').value)) ? 0 : num($('brutP').value); setBrutP(String(Math.max(0, r2(p + d))).replace('.', ',')); }
+    else { var el = $(field); var v = isNaN(num(el.value)) ? 0 : num(el.value); el.value = String(Math.max(0, r2(v + d))).replace('.', ','); render(); }
+  }
+
+  $('brut').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brutP').value = isNaN(n) ? '' : toStr(n * PRIME); render(); });
+  $('brutP').addEventListener('input', function(e){ var c = clean(e.target.value); e.target.value = c; var n = num(c); $('brut').value = isNaN(n) ? '' : toStr(n / PRIME); render(); });
+  ['hours','years','taux','jours'].forEach(function(id){
+    $(id).addEventListener('input', function(e){ e.target.value = clean(e.target.value); render(); });
+  });
+
+  render();
+</script>
+</body>
+</html>
